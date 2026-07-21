@@ -1,0 +1,16 @@
+{
+  "name": "penalty-tictactoe-worldcup",
+  "version": "1.0.0",
+  "description": "Indie Arcade Penalty Football + Tic-Tac-Toe World Cup game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "keywords": ["football", "soccer", "penalty", "tic-tac-toe", "world-cup", "game"],
+  "author": "Antigravity",
+  "license": "MIT"
+}

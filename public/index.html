@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penalty Tic-Tac-Toe: World Cup Edition</title>
+  <meta name="description" content="Combine football penalty shootout skills with 3x3 Tic-Tac-Toe strategy to win the World Cup!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Global Game Container -->
+  <div id="game-app" class="game-container">
+
+    <!-- Header & Status Bar -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="ball-icon">⚽</span>
+        <h1 class="game-title">PENALTY <span class="highlight">TIC-TAC-TOE</span></h1>
+      </div>
+      <div class="header-controls">
+        <button id="btn-audio" class="btn-icon" title="Toggle Sound">
+          <span id="audio-icon">🔊</span>
+        </button>
+        <button id="btn-reset-tourney" class="btn-secondary btn-sm" title="Reset Progress">🏆 New Cup</button>
+      </div>
+    </header>
+
+    <!-- SCREEN 1: TEAM SELECTION -->
+    <section id="screen-team-select" class="screen active">
+      <div class="screen-card">
+        <h2 class="section-title">CHOOSE YOUR NATION</h2>
+        <p class="subtitle">Guide your country through the World Cup by scoring penalty goals on the 3x3 grid!</p>
+
+        <div id="team-grid" class="team-grid">
+          <!-- Populated dynamically by JS -->
+        </div>
+
+        <div id="selected-team-info" class="selected-team-box hidden">
+          <div class="team-badge-large" id="selected-flag">🇭🇺</div>
+          <div class="team-details">
+            <h3 id="selected-name">Hungary</h3>
+            <p id="selected-desc">Historical football powerhouse! Ready to conquer the World Cup.</p>
+          </div>
+          <button id="btn-start-cup" class="btn-primary btn-lg shine">ENTER WORLD CUP 🏆</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: TOURNAMENT BRACKET TREE -->
+    <section id="screen-tournament" class="screen">
+      <div class="screen-card bracket-card">
+        <div class="tournament-header">
+          <span class="badge-stage" id="current-stage-name">ROUND OF 16</span>
+          <h2>WORLD CUP BRACKET TREE</h2>
+        </div>
+
+        <div id="bracket-view" class="bracket-container">
+          <!-- Rendered dynamically by tournament.js -->
+        </div>
+
+        <div class="bracket-action">
+          <button id="btn-play-match" class="btn-primary btn-xl shine">PLAY MATCH ⚽</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: MATCH PITCH -->
+    <section id="screen-match" class="screen">
+      <!-- Top Scoreboard Bar -->
+      <div class="scoreboard-bar">
+        <div class="team-score player-score">
+          <span class="flag" id="match-player-flag">🇭🇺</span>
+          <span class="team-code" id="match-player-code">HUN</span>
+          <span class="tictac-count" id="match-player-cells">0 Cells</span>
+        </div>
+
+        <div class="match-info">
+          <span class="stage-tag" id="match-stage-label">ROUND OF 16</span>
+          <div class="turn-indicator" id="match-turn-label">YOUR SHOOTING TURN</div>
+        </div>
+
+        <div class="team-score opponent-score">
+          <span class="tictac-count" id="match-opp-cells">0 Cells</span>
+          <span class="team-code" id="match-opp-code">BRA</span>
+          <span class="flag" id="match-opp-flag">🇧🇷</span>
+        </div>
+      </div>
+
+      <!-- Main Football Pitch View -->
+      <div class="pitch-container">
+        <!-- Goal & Grid Canvas Area -->
+        <div class="goal-area">
+          <canvas id="match-canvas" width="800" height="480"></canvas>
+          
+          <!-- Interactive 3x3 Tic-Tac-Toe Grid Overlay -->
+          <div id="tictactoe-board" class="tictactoe-grid">
+            <button class="cell" data-index="0" id="cell-0"><span class="cell-num">1</span></button>
+            <button class="cell" data-index="1" id="cell-1"><span class="cell-num">2</span></button>
+            <button class="cell" data-index="2" id="cell-2"><span class="cell-num">3</span></button>
+            <button class="cell" data-index="3" id="cell-3"><span class="cell-num">4</span></button>
+            <button class="cell" data-index="4" id="cell-4"><span class="cell-num">5</span></button>
+            <button class="cell" data-index="5" id="cell-5"><span class="cell-num">6</span></button>
+            <button class="cell" data-index="6" id="cell-6"><span class="cell-num">7</span></button>
+            <button class="cell" data-index="7" id="cell-7"><span class="cell-num">8</span></button>
+            <button class="cell" data-index="8" id="cell-8"><span class="cell-num">9</span></button>
+          </div>
+        </div>
+
+        <!-- Live Commentary Banner -->
+        <div id="commentary-box" class="commentary-banner">
+          Press <strong>SPACEBAR</strong> or tap <strong>ACTION BUTTON</strong> to set direction!
+        </div>
+
+        <!-- Control Gauges Panel -->
+        <div class="control-panel">
+          <!-- Shooting Controls -->
+          <div id="shoot-controls" class="controls-group">
+            <div class="gauge-wrapper">
+              <label>HORIZONTAL AIM</label>
+              <div class="aim-gauge-track">
+                <div id="aim-pointer" class="aim-pointer">▲</div>
+              </div>
+            </div>
+
+            <div class="gauge-wrapper">
+              <label>POWER / ELEVATION</label>
+              <div class="power-gauge-track">
+                <div id="power-bar" class="power-bar-fill"></div>
+              </div>
+            </div>
+
+            <button id="btn-kick" class="btn-action pulse">SET AIM (SPACE)</button>
+          </div>
+
+          <!-- Defending Controls (Clean & Identical to Shooting Controls Panel!) -->
+          <div id="defend-controls" class="controls-group hidden">
+            <div class="gauge-wrapper">
+              <label>GOALKEEPER DIVE DIRECTION</label>
+              <div class="aim-gauge-track">
+                <div id="defend-pointer" class="aim-pointer">▲</div>
+              </div>
+            </div>
+
+            <button id="btn-defend" class="btn-action btn-primary pulse">🧤 LOCK DIVE DIRECTION (SPACE)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: MATCH RESULT MODAL -->
+    <div id="modal-result" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="result-icon" id="result-emoji">🏆</div>
+        <h2 id="result-title">VICTORY!</h2>
+        <p id="result-message">Hungary advanced to the Quarter-Finals!</p>
+        <div class="result-board-preview" id="result-board-preview">
+          <!-- Summary grid -->
+        </div>
+        <button id="btn-continue-tourney" class="btn-primary btn-lg shine">CONTINUE</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="js/storageService.js"></script>
+  <script src="js/soundFX.js"></script>
+  <script src="js/gameEngine.js"></script>
+  <script src="js/tournament.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
