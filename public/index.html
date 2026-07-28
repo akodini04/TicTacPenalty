@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Penalty Tic-Tac-Toe: World Cup Edition</title>
-  <meta name="description" content="Combine football penalty shootout skills with 3x3 Tic-Tac-Toe strategy to win the World Cup!">
+  <meta name="description" content="Combine football penalty shootout skills with 4x4 Tic-Tac-Toe strategy to win the World Cup!">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
     <section id="screen-team-select" class="screen active">
       <div class="screen-card">
         <h2 class="section-title">CHOOSE YOUR NATION</h2>
-        <p class="subtitle">Guide your country through the World Cup by scoring penalty goals on the 3x3 grid!</p>
+        <p class="subtitle">Guide your country through the World Cup by scoring penalty goals on the 4x4 grid! Get 4-in-a-row to win!</p>
 
         <div id="team-grid" class="team-grid">
           <!-- Populated dynamically by JS -->
@@ -95,23 +95,45 @@
         <div class="goal-area">
           <canvas id="match-canvas" width="800" height="480"></canvas>
           
-          <!-- Interactive 3x3 Tic-Tac-Toe Grid Overlay -->
+          <!-- Interactive 4x4 Tic-Tac-Toe Grid Overlay (4-in-a-row wins) -->
           <div id="tictactoe-board" class="tictactoe-grid">
-            <button class="cell" data-index="0" id="cell-0"><span class="cell-num">1</span></button>
-            <button class="cell" data-index="1" id="cell-1"><span class="cell-num">2</span></button>
-            <button class="cell" data-index="2" id="cell-2"><span class="cell-num">3</span></button>
-            <button class="cell" data-index="3" id="cell-3"><span class="cell-num">4</span></button>
-            <button class="cell" data-index="4" id="cell-4"><span class="cell-num">5</span></button>
-            <button class="cell" data-index="5" id="cell-5"><span class="cell-num">6</span></button>
-            <button class="cell" data-index="6" id="cell-6"><span class="cell-num">7</span></button>
-            <button class="cell" data-index="7" id="cell-7"><span class="cell-num">8</span></button>
-            <button class="cell" data-index="8" id="cell-8"><span class="cell-num">9</span></button>
+            <button class="cell" data-index="0"  id="cell-0" ><span class="cell-num">1</span></button>
+            <button class="cell" data-index="1"  id="cell-1" ><span class="cell-num">2</span></button>
+            <button class="cell" data-index="2"  id="cell-2" ><span class="cell-num">3</span></button>
+            <button class="cell" data-index="3"  id="cell-3" ><span class="cell-num">4</span></button>
+            <button class="cell" data-index="4"  id="cell-4" ><span class="cell-num">5</span></button>
+            <button class="cell" data-index="5"  id="cell-5" ><span class="cell-num">6</span></button>
+            <button class="cell" data-index="6"  id="cell-6" ><span class="cell-num">7</span></button>
+            <button class="cell" data-index="7"  id="cell-7" ><span class="cell-num">8</span></button>
+            <button class="cell" data-index="8"  id="cell-8" ><span class="cell-num">9</span></button>
+            <button class="cell" data-index="9"  id="cell-9" ><span class="cell-num">10</span></button>
+            <button class="cell" data-index="10" id="cell-10"><span class="cell-num">11</span></button>
+            <button class="cell" data-index="11" id="cell-11"><span class="cell-num">12</span></button>
+            <button class="cell" data-index="12" id="cell-12"><span class="cell-num">13</span></button>
+            <button class="cell" data-index="13" id="cell-13"><span class="cell-num">14</span></button>
+            <button class="cell" data-index="14" id="cell-14"><span class="cell-num">15</span></button>
+            <button class="cell" data-index="15" id="cell-15"><span class="cell-num">16</span></button>
           </div>
         </div>
+
+        <!-- Hungary VAR Power-Up Indicator -->
+        <div id="var-indicator" class="var-indicator" style="display:none;">
+          <span id="var-status-text">🇭🇺 VAR READY</span>
+        </div>
+
+        <!-- Hungary VAR Call Button (shown after AI goals) -->
+        <button id="btn-var" class="btn-var" style="display:none;">📹 CALL VAR!</button>
 
         <!-- Live Commentary Banner -->
         <div id="commentary-box" class="commentary-banner">
           Press <strong>SPACEBAR</strong> or tap <strong>ACTION BUTTON</strong> to set direction!
+        </div>
+
+        <!-- Mid-Air Curve Controls (Active during shot flight) -->
+        <div id="midair-curve-controls" class="curve-controls hidden">
+          <button id="btn-curve-left" class="btn-curve">◀ BEND LEFT (←)</button>
+          <span style="font-size:0.8rem; opacity:0.85; font-weight:bold;">🌀 MID-AIR CURVE CONTROL</span>
+          <button id="btn-curve-right" class="btn-curve">BEND RIGHT (→) ▶</button>
         </div>
 
         <!-- Control Gauges Panel -->
@@ -144,7 +166,7 @@
               </div>
             </div>
 
-            <button id="btn-defend" class="btn-action btn-primary pulse">🧤 LOCK DIVE DIRECTION (SPACE)</button>
+            <button id="btn-defend" class="btn-action pulse">🧤 LOCK COLUMN (SPACE)</button>
           </div>
         </div>
       </div>
@@ -160,6 +182,21 @@
           <!-- Summary grid -->
         </div>
         <button id="btn-continue-tourney" class="btn-primary btn-lg shine">CONTINUE</button>
+      </div>
+    </div>
+
+    <!-- VAR MODAL (Hungary power-up coin flip) -->
+    <div id="modal-var" class="modal-overlay hidden">
+      <div class="modal-card var-modal-card">
+        <div class="var-header">
+          <span class="var-badge">📹 VAR REVIEW</span>
+          <h2>Video Assistant Referee</h2>
+          <p>Reviewing the previous goal...</p>
+        </div>
+        <div id="var-coin" class="var-coin">🪙</div>
+        <h3 id="var-verdict" style="margin:1rem 0 0.5rem;"></h3>
+        <p id="var-desc" style="font-size:0.9rem; opacity:0.8;"></p>
+        <button id="btn-var-close" class="btn-primary btn-lg shine" style="display:none; margin-top:1.5rem;">RESUME MATCH</button>
       </div>
     </div>
 
