@@ -12,7 +12,7 @@ let leaderboard = [
   { team: 'HU', name: 'Hungary 🇭🇺', trophies: 1, wins: 4, date: new Date().toISOString() }
 ];
 
-// API Endpoints for DB Infrastructure
+// API Endpoints for DB Infrastructure, **hello there**
 app.get('/api/leaderboard', (req, res) => {
   res.json({ success: true, leaderboard });
 });
