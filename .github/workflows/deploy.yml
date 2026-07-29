@@ -1,0 +1,66 @@
+name: Deploy To Azure VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # - name: Run Tests
+      #   run: npm test
+
+      - name: Wait For SSH
+        run: |
+          for i in {1..12}; do
+            nc -z ${{ secrets.VM_HOST }} 22 && exit 0
+            echo "Waiting for VM to become available..."
+            sleep 10
+          done
+
+          echo "VM not reachable"
+          exit 1
+
+      - name: Deploy Application
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/TicTacPenalty
+
+            git fetch origin
+            git reset --hard origin/main
+
+            npm ci
+
+            pm2 reload tictacpenalty || pm2 start server.js --name tictacpenalty
+
+            pm2 save
+
+      - name: Verify Application
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            pm2 list
+            curl -f http://localhost:3000/
+
+            echo "Deployment Successful"
