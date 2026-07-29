@@ -242,21 +242,34 @@ class App {
   }
 
   handlePlayerKick(aimVal, powerVal) {
-    const targetCell = window.gameEngine.getShotCellIndex(aimVal, powerVal);
-    const result     = window.gameEngine.evaluatePlayerShot(targetCell);
+    const initialTargetCell = window.gameEngine.getShotCellIndex(aimVal, powerVal);
+    const gkDiveCell        = window.gameEngine.getAiGkDiveCell(initialTargetCell);
 
-    // Pass aimVal to renderer so it knows bend amount
     window.renderer.aimState.aimVal = aimVal;
 
-    window.renderer.animateShot(targetCell, result.gkDiveCell, result.saved, () => {
+    // Pass isPlayer = true to animateShot
+    window.renderer.animateShot(initialTargetCell, gkDiveCell, false, (finalTargetCell) => {
+      // Evaluate result based on finalTargetCell (which may have shifted to a neighboring square!)
+      const result = window.gameEngine.evaluatePlayerShotResult(finalTargetCell, gkDiveCell);
+
       this.updateBoardUI();
+
+      const curved = (finalTargetCell !== initialTargetCell);
 
       if (result.saved) {
         window.controls.updateCommentary(`❌ <strong>SAVED!</strong> Goalkeeper guessed cell ${result.gkDiveCell + 1} exactly!`);
       } else if (result.claimed) {
-        window.controls.updateCommentary(`⚽ <strong>GOAL!</strong> You claimed grid cell #${targetCell + 1}!`);
+        if (curved) {
+          window.controls.updateCommentary(`⚽ <strong>GOAL!</strong> 🌀 Curved into neighboring cell #${finalTargetCell + 1} and claimed it!`);
+        } else {
+          window.controls.updateCommentary(`⚽ <strong>GOAL!</strong> You claimed grid cell #${finalTargetCell + 1}!`);
+        }
       } else {
-        window.controls.updateCommentary(`⚽ <strong>GOAL!</strong> Hit cell #${targetCell + 1} (already marked).`);
+        if (curved) {
+          window.controls.updateCommentary(`⚽ <strong>GOAL!</strong> 🌀 Curved into cell #${finalTargetCell + 1}!`);
+        } else {
+          window.controls.updateCommentary(`⚽ <strong>GOAL!</strong> Hit cell #${finalTargetCell + 1} (already marked).`);
+        }
       }
 
       if (result.winStatus.winner) {
@@ -264,7 +277,7 @@ class App {
       } else {
         setTimeout(() => this.startAiTurn(), 1400);
       }
-    });
+    }, true); // isPlayer = true
   }
 
   startAiTurn() {
@@ -284,6 +297,7 @@ class App {
     // AI shot travels from penalty spot too — give it a bend
     window.renderer.aimState.aimVal = 50 + (result.targetCell % 4) * 16 - 25;
 
+    // Pass isPlayer = false to animateShot
     window.renderer.animateShot(result.targetCell, playerGuessCell, result.saved, () => {
       this.updateBoardUI();
 
@@ -302,18 +316,15 @@ class App {
       }
 
       if (result.winStatus.winner) {
-        // Delay slightly more to allow VAR button to show
         setTimeout(() => this.handleMatchEnd(result.winStatus), 1500);
       } else {
-        // Don't start player turn immediately — let VAR button sit for a moment
         setTimeout(() => {
           if (!this.varAvailable) {
             this.startPlayerTurn();
           }
-          // If VAR is available, we wait for user to decide. The player turn starts after VAR decision.
         }, 1500);
       }
-    });
+    }, false); // isPlayer = false
   }
 
   // ─── VAR (Hungary Power-Up for EVERY conceded goal) ──────────────────────

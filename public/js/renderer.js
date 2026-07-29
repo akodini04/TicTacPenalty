@@ -35,6 +35,9 @@ class Renderer {
       isKicking: false
     };
 
+    // Track if current shot is by player (bending ONLY allowed for player shot)
+    this.isPlayerShot = false;
+
     // Live Mid-Air Curve Offsets (X = horizontal bend, Y = vertical dip/lift)
     this.liveCurveOffset  = 0;
     this.liveCurveYOffset = 0;
@@ -74,7 +77,9 @@ class Renderer {
   }
 
   applyMidAirCurve(direction) {
-    if (!this.ball.isKicking) return;
+    // STRICT RULE: Only allow mid-air bending during PLAYER's shooting turn!
+    if (!this.ball.isKicking || !this.isPlayerShot) return;
+
     // direction: -1 (left) or +1 (right)
     this.liveCurveOffset = Math.max(-130, Math.min(130, this.liveCurveOffset + direction * 4.5));
     
@@ -93,15 +98,18 @@ class Renderer {
   }
 
   applyMidAirVerticalCurve(direction) {
-    if (!this.ball.isKicking) return;
+    // STRICT RULE: Only allow mid-air bending during PLAYER's shooting turn!
+    if (!this.ball.isKicking || !this.isPlayerShot) return;
+
     // direction: -1 (dip) or +1 (lift)
     this.liveCurveYOffset = Math.max(-90, Math.min(90, this.liveCurveYOffset + direction * 4.0));
   }
 
-  animateShot(targetCellIndex, gkDiveCellIndex, isSaved, onComplete) {
+  animateShot(targetCellIndex, gkDiveCellIndex, isSaved, onComplete, isPlayer = false) {
     const targetCoords = this.getCellCoords(targetCellIndex);
     const gkCoords     = this.getCellCoords(gkDiveCellIndex);
 
+    this.isPlayerShot       = isPlayer;
     this.aimState.active    = false;
     this.defendState.active = false;
     this.liveCurveOffset    = 0; // Reset curve offsets at start of shot
@@ -136,8 +144,8 @@ class Renderer {
       const t = Math.min(1, elapsed / duration);
       this.ball.progress = t;
 
-      // Continuous polling for held Arrow keys during mid-air flight
-      if (window.controls) {
+      // Continuous polling for held Arrow keys ONLY if it's the player shooting
+      if (this.isPlayerShot && window.controls) {
         if (window.controls.isKeyPressed('ArrowLeft') || window.controls.isKeyPressed('KeyA')) {
           this.applyMidAirCurve(-1);
         }
@@ -162,6 +170,25 @@ class Renderer {
       this.ball.x = mt * mt * startX + 2 * t * mt * cpX + t * t * finalTargetX;
       this.ball.y = mt * mt * startY + 2 * t * mt * cpY + t * t * finalTargetY;
 
+      // Calculate if heavy bending shifts landing target cell to a neighbouring square (±1 cell)
+      let currentFinalCell = targetCellIndex;
+      if (this.isPlayerShot) {
+        const initCol = targetCellIndex % 4;
+        const initRow = Math.floor(targetCellIndex / 4);
+
+        let colShift = 0;
+        if (this.liveCurveOffset > 55) colShift = 1;
+        else if (this.liveCurveOffset < -55) colShift = -1;
+
+        let rowShift = 0;
+        if (this.liveCurveYOffset > 40) rowShift = 1;
+        else if (this.liveCurveYOffset < -40) rowShift = -1;
+
+        const finalCol = Math.max(0, Math.min(3, initCol + colShift));
+        const finalRow = Math.max(0, Math.min(3, initRow + rowShift));
+        currentFinalCell = finalRow * 4 + finalCol;
+      }
+
       // GK dives smoothly
       this.gkPos.x += (this.gkTarget.x - this.gkPos.x) * 0.10;
       this.gkPos.y += (this.gkTarget.y - this.gkPos.y) * 0.10;
@@ -170,10 +197,11 @@ class Renderer {
         requestAnimationFrame(animate);
       } else {
         this.ball.isKicking = false;
-        this.createSparks(targetCoords.x, targetCoords.y, isSaved ? '#ef4444' : '#22c55e');
+        const hitCoords = this.getCellCoords(currentFinalCell);
+        this.createSparks(hitCoords.x, hitCoords.y, isSaved ? '#ef4444' : '#22c55e');
         if (isSaved) { if (window.soundFX) window.soundFX.playSave(); }
         else         { if (window.soundFX) window.soundFX.playGoal(); }
-        if (onComplete) onComplete();
+        if (onComplete) onComplete(currentFinalCell);
       }
     };
 
@@ -186,6 +214,7 @@ class Renderer {
     this.ball.x = 400; this.ball.y = 440;
     this.ball.progress = 1;
     this.ball.isKicking = false;
+    this.isPlayerShot   = false;
     this.liveCurveOffset  = 0;
     this.liveCurveYOffset = 0;
     this.aimState.active    = false;
@@ -601,8 +630,8 @@ class Renderer {
     this.ctx.save();
     this.ctx.translate(this.ball.x, this.ball.y);
 
-    // Mid-air spin aura if actively curved horizontally or vertically
-    if (this.ball.isKicking && (Math.abs(this.liveCurveOffset) > 10 || Math.abs(this.liveCurveYOffset) > 10)) {
+    // Mid-air spin aura if actively curved horizontally or vertically (player shot ONLY)
+    if (this.ball.isKicking && this.isPlayerShot && (Math.abs(this.liveCurveOffset) > 10 || Math.abs(this.liveCurveYOffset) > 10)) {
       this.ctx.strokeStyle = '#ffcc00';
       this.ctx.lineWidth = 2.5;
       this.ctx.beginPath();
